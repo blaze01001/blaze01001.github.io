@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Тимур, нажми на кнопку</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            margin: 0;
+            background: #0f1020;
+            color: #fff;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            overflow: hidden;
+        }
+        .center {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+        button {
+            padding: 16px 24px;
+            font-size: 18px;
+            border: none;
+            border-radius: 12px;
+            background: #ffffff;
+            color: #1a1b35;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+            transition: transform .1s ease, box-shadow .2s ease;
+        }
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 40px rgba(0, 0, 0, .35);
+        }
+        button:active {
+            transform: translateY(1px) scale(0.99);
+        }
+        #flash {
+            position: fixed;
+            inset: 0;
+            background: #fff;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1;
+            transition: opacity .12s ease;
+        }
+        #flash.active {
+            opacity: .25;
+        }
+        .particle {
+            position: fixed;
+            left: 0;
+            top: 0;
+            font-size: 18px;
+            filter: drop-shadow(0 0 6px rgba(255, 77, 166, .6));
+            pointer-events: none;
+            animation: fly var(--dur) ease-out forwards;
+            will-change: transform, opacity;
+        }
+        @keyframes fly {
+            0% { transform: translate(0, 0) scale(.4) rotate(0deg); opacity: 0; }
+            12% { opacity: 1; }
+            100% { transform: translate(var(--dx), var(--dy)) scale(1) rotate(var(--rot)); opacity: 0; }
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: -20%;
+            background: radial-gradient(80% 80% at 50% 20%, #1a1b35, #0f1020);
+            z-index: 0;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .particle { animation-duration: 600ms !important; }
+        }
+    </style>
+</head>
+<body>
+    <div id="flash"></div>
+    <div class="center">
+        <button id="startBtn">Тимур, нажми на кнопку</button>
+    </div>
+    <script>
+        const btn = document.getElementById('startBtn');
+        const flash = document.getElementById('flash');
+        const glyphs = ['卐', '卐', '卐', '卐', '卐卐卐', '卐', '卐', '卐', '卐', '卐', '卐', '卐', '卐'];
+        let running = false;
+        let burstTimer = null;
+
+        const rand = (min, max) => Math.random() * (max - min) + min;
+        const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+        function doFlash() {
+            flash.classList.add('active');
+            setTimeout(() => flash.classList.remove('active'), 140);
+        }
+
+        function createParticle(cxVw, cyVh) {
+            const el = document.createElement('div');
+            el.className = 'particle';
+            el.textContent = pick(glyphs);
+
+            const angle = rand(0, Math.PI * 2);
+            const distance = rand(90, 220);
+            const dx = Math.cos(angle) * distance;
+            const dy = Math.sin(angle) * distance;
+            const size = rand(16, 30);
+            const dur = rand(900, 1700);
+            const rot = (Math.random() < 0.6 ? rand(-120, 120) : rand(-220, 220)) + 'deg';
+
+            el.style.left = cxVw + 'vw';
+            el.style.top = cyVh + 'vh';
+            el.style.fontSize = size + 'px';
+            el.style.setProperty('--dx', dx.toFixed(1) + 'px');
+            el.style.setProperty('--dy', dy.toFixed(1) + 'px');
+            el.style.setProperty('--rot', rot);
+            el.style.setProperty('--dur', dur + 'ms');
+
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), dur + 40);
+        }
+
+        function burst() {
+            const cx = rand(15, 85);
+            const cy = rand(18, 60);
+            const count = Math.floor(rand(14, 26));
+
+            doFlash();
+            for (let i = 0; i < count; i++) {
+                const jx = cx + rand(-1.6, 1.6);
+                const jy = cy + rand(-1.6, 1.6);
+                setTimeout(() => createParticle(jx, jy), i * 6);
+            }
+        }
+
+        function startShow() {
+            if (running) return;
+            running = true;
+            const original = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '✨ Ты пидорас! ✨';
+
+            burst();
+            burstTimer = setInterval(burst, 850);
+
+            
+            setTimeout(() => {
+                clearInterval(burstTimer);
+                burstTimer = null;
+                running = false;
+                btn.disabled = false;
+                btn.textContent = original;
+            }, 12000);
+        }
+
+        btn.addEventListener('click', startShow);
+    </script>
+</body>
+</html>
